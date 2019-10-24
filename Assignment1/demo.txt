@@ -1,0 +1,34 @@
+User Input: ./5ps.out -p 1148 -c -t -v -s
+Program Output: 1148: S time=00:00:12 sz=16980 [(login)]
+
+User Input: ./5ps.out
+Program Output: 
+
+User Input: ./5ps.out -p
+Program Output: You have not provided a valid PID
+
+User Input: ./5ps.out -p 3
+Program Output: 
+
+User Input: ./5ps.out -s
+Program Output: 1: S
+
+User Input: ./5ps.out -p 3 -s
+Program Output: 
+
+User Input: ./5ps.out -t
+Program Output: 1: time=00:00:05
+
+User Input: ./5ps.out -v
+Program Output: 1: sz=29983
+
+User Input: ./5ps.out -c
+Program Output: 1: [(systemd)]
+
+User Input: ./5ps.out -h
+Program Output: 
+    Type '-p' to define a specific PID
+    Type '-s' to retrieve the current status of the specified process
+    Type '-t' to retrieve the time this program has been running on the system
+    Type '-v' to retrieve the size of the specified process
+    Type '-c' to retrieve the virtual memory of the specified process
