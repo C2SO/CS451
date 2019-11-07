@@ -2,68 +2,92 @@
 // CS 451
 // prime.c
 
+#include <ctype.h>
+#include <dirent.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
 
-long unsigned int calculatedPrime = 123400003;
-void handler(int signum);
 int checkPrimeAndPrint(unsigned long int toCheck);
+int proccesNumber, priority, start = 0;
+long unsigned int bigPrime = -1;
+
+void handler(int signum)
+{
+    switch (signum)
+    {
+    case SIGTSTP:
+        printf("Process %d: My priority is %d, my PID is %d: I am about to be\n", proccesNumber, priority, getpid());
+        printf("suspended... Highest prime number I found is %lu.\n\n", bigPrime);
+        kill(getpid(), SIGSTOP);
+        break;
+    case SIGCONT:
+        printf("Process %d: My priority is %d, my PID is %d: I just got resumed.\n", proccesNumber, priority, getpid());
+        printf("Highest prime number I found is %lu.\n\n", bigPrime);
+        break;
+    case SIGTERM:
+        printf("Process %d: My priority is %d, my PID is %d: I completed my task\n", proccesNumber, priority, getpid());
+        printf("and I am exiting. Highest prime number I found is %lu.\n\n", bigPrime);
+        kill(getpid(), SIGKILL);
+        break;
+    }
+}
+void checkArgs(int argc, char *argv[])
+{
+    int c;
+    while ((c = getopt(argc, argv, "n:p:s:")) != -1)
+    {
+        switch (c)
+        {
+        case 'n':
+            proccesNumber = atoi(optarg);
+            break;
+        case 'p':
+            priority = atoi(optarg);
+            break;
+        case 's':
+            start = atoi(optarg);
+            break;
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
+    checkArgs(argc, argv);
 
-    struct sigaction sa_suspend;
+    struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = suspend_handler;
+    sa.sa_handler = handler;
     sigaction(SIGTSTP, &sa, NULL);
-
-    struct sigaction sa_continue;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = continue_handler;
     sigaction(SIGCONT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
 
-    struct sigaction sa_terminate;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = terminate_handler;
-    sigaction(SIGQUIT, &sa, NULL);
+    printf("Process %d: My priority is %d, my PID is %d: I just got started.\n", proccesNumber, priority, getpid());
+    printf("I am starting with the number %d to find the next prime\n", start);
+    printf("number.\n\n");
 
     int numPrinted = 0;
-    long unsigned int numberToCheck = calculatedPrime + 1;
-    while (numPrinted < 10)
+    long unsigned int possibleBigPrime = start + 1;
+    while (1)
     {
-        if (checkPrimeAndPrint(numberToCheck) == 1)
+        int notPrime = 0;
+        for (int counter = 3; counter <= sqrt(possibleBigPrime); counter += 2)
         {
-            printf("prime number is %lu \n", numberToCheck);
-            numPrinted++;
+            if ((possibleBigPrime % counter) == 0)
+            {
+                notPrime = 1;
+            }
         }
-        numberToCheck++;
+        if (notPrime == 0)
+        {
+            bigPrime = possibleBigPrime;
+        }
+        possibleBigPrime++;
     }
-}
-
-void suspend_handler(int signum)
-{
-    // Write handler code here.
-}
-
-void continue_handler(int signum)
-{
-    // Write handler code here.
-}
-
-void terminate_handler(int signum)
-{
-    // Write handler code here.
-}
-
-int checkPrimeAndPrint(unsigned long int toCheck)
-{
-    unsigned long int i = 2;
-    int prime = 1;
-    while (prime == 1 && i < toCheck / 2)
-    {
-        if (toCheck % i == 0)
-            prime = 0;
-        i++;
-    }
-    return (prime);
 }
