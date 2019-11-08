@@ -14,8 +14,9 @@
 
 int **fileData;
 int currProcess = -1;
-int timePassed, fileLines, terminatedProcesses, terminate = 0;
+int timePassed, fileLines, terminatedProcesses, terminate, printTimeBool = 0;
 int *waitList;
+char *timeString[100];
 
 FILE *openFile(char *fileName)
 {
@@ -26,6 +27,15 @@ FILE *openFile(char *fileName)
         exit(0);
     }
     return primeFile;
+}
+
+void printTime()
+{
+    if (printTimeBool == 0)
+    {
+        printf("Scheduler: Time Now: %d Seconds\n", timePassed);
+    }
+    printTimeBool = 1;
 }
 
 int countLines(char *fileName)
@@ -104,14 +114,29 @@ void startProcess(int processID)
     {
         int processPID = fileData[getProcessLine(currProcess)][4];
         kill(processPID, SIGTSTP);
-        printf("%d Seconds\n\n", timePassed);
+        if (printTimeBool == 0)
+        {
+            printTime();
+            printf("Suspending Process %d (Pid %d) ", currProcess, fileData[getProcessLine(currProcess)][4]);
+        }
+        else
+        {
+            printf("and Suspending Process %d (Pid %d) \n", currProcess, fileData[getProcessLine(currProcess)][4]);
+        }
     }
 
     if (terminate == 1 && currProcess != -1 && fileData[getProcessLine(currProcess)][4] != -1)
     {
-        printf("startProcess\n");
         kill(fileData[getProcessLine(currProcess)][4], SIGCONT);
-        printf("%d Seconds\n\n", timePassed);
+        if (printTimeBool == 0)
+        {
+            printTime();
+            printf("Resuming Process %d (Pid %d) ", currProcess, fileData[getProcessLine(currProcess)][4]);
+        }
+        else
+        {
+            printf("and Resuming Process %d (Pid %d) \n", currProcess, fileData[getProcessLine(currProcess)][4]);
+        }
         terminate = 0;
     }
     else
@@ -133,8 +158,16 @@ void startProcess(int processID)
         }
         else
         {
-            printf("%d Seconds\n\n", timePassed);
             fileData[getProcessLine(processID)][4] = child_pid;
+            if (printTimeBool == 0)
+            {
+                printTime();
+                printf("Scheduling to Process %d (Pid %d) \n", currProcess, fileData[getProcessLine(currProcess)][4]);
+            }
+            else
+            {
+                printf("and Scheduling to Process %d (Pid %d) \n", currProcess, fileData[getProcessLine(currProcess)][4]);
+            }
         }
     }
 }
@@ -252,12 +285,20 @@ int getPriorityProcess()
 void terminateProcess()
 {
     kill(fileData[getProcessLine(currProcess)][4], SIGTERM);
-    printf("%d Seconds\n\n", timePassed);
+    if (printTimeBool == 0)
+    {
+        printTime();
+        printf("Terminating Process %d (Pid %d) ", currProcess, fileData[getProcessLine(currProcess)][4]);
+    }
+    else
+    {
+        printf("and Terminating Process %d (Pid %d) \n", currProcess, fileData[getProcessLine(currProcess)][4]);
+    }
     currProcess = -1;
     terminatedProcesses++;
     if (terminatedProcesses == fileLines)
     {
-        printf("All processes have successfully run!\n");
+        printf("\n\nAll processes have successfully run!\n");
         exit(1);
     }
 }
@@ -303,6 +344,11 @@ void timer_handler(int signal)
         tickCurrProcess();
     }
     checkCurrentProcess();
+    if (printTimeBool == 1)
+    {
+        printf("\n");
+        printTimeBool = 0;
+    }
 }
 
 void readFile(char *fileName)
@@ -344,6 +390,7 @@ char *getFileName(char *argv[])
 
 int main(int argc, char *argv[])
 {
+    printf("\n");
     char *fileName = getFileName(argv);
     readFile(fileName);
 }
