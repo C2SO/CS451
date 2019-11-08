@@ -14,7 +14,7 @@
 
 int **fileData;
 int currProcess = -1;
-int timePassed, fileLines = 0;
+int timePassed, fileLines, terminatedProcesses, terminate = 0;
 int *waitList;
 
 FILE *openFile(char *fileName)
@@ -50,7 +50,7 @@ int **fileToArray(char *fileName)
     int **fileArray = malloc(fileLines * sizeof(double));
     for (int i = 0; i < fileLines; ++i)
     {
-        fileArray[i] = malloc(4 * sizeof(double));
+        fileArray[i] = malloc(5 * sizeof(double));
     }
     FILE *primeFile = openFile(fileName);
     int iterator = 0;
@@ -75,14 +75,68 @@ void printWaitQueue()
     }
 }
 
+int getProcessLine(int process)
+{
+    for (int i = 0; i < fileLines; i++)
+    {
+        if (fileData[i][0] == process)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int getPriority()
+{
+    return fileData[getProcessLine(currProcess)][3];
+}
+
+double getNumber()
+{
+    return 1000000000;
+}
+
 void startProcess(int processID)
 {
-    if (currProcess != processID)
+    // printf("currProcess: %d\n newProcess: %d\n", currProcess, processID);
+    if (currProcess != -1 && fileData[getProcessLine(currProcess)][4] != -1)
     {
-        printf("Stopping process: %d\n", currProcess);
+        int processPID = fileData[getProcessLine(currProcess)][4];
+        kill(processPID, SIGTSTP);
+        printf("%d Seconds\n\n", timePassed);
     }
-    currProcess = processID;
-    printf("Started process %d\n", currProcess);
+
+    if (terminate == 1 && currProcess != -1 && fileData[getProcessLine(currProcess)][4] != -1)
+    {
+        printf("startProcess\n");
+        kill(fileData[getProcessLine(currProcess)][4], SIGCONT);
+        printf("%d Seconds\n\n", timePassed);
+        terminate = 0;
+    }
+    else
+    {
+        terminate = 0;
+        currProcess = processID;
+        int child_pid;
+        child_pid = fork();
+        if (child_pid == 0)
+        {
+            // printf("Starting process %d\n", getpid());
+            char str[11];
+            sprintf(str, "%fl", getNumber());
+            char str2[5];
+            sprintf(str2, "%d", processID);
+            char str3[5];
+            sprintf(str3, "%d", getPriority());
+            execlp("./prime.out", "./prime.out", "-s", str, "-p", str3, "-n", str2, NULL);
+        }
+        else
+        {
+            printf("%d Seconds\n\n", timePassed);
+            fileData[getProcessLine(processID)][4] = child_pid;
+        }
+    }
 }
 
 int comparePriority(int pid1, int pid2)
@@ -113,13 +167,11 @@ void updateWaitListArray(int pid1, int pid2, int arrayIndex)
     if (pid1 == -1)
     {
         waitList[arrayIndex] = pid2;
-        // printf("Added %d to slot %d\n", pid2, arrayIndex);
     }
     else if (comparePriority(pid1, pid2) == pid2)
     {
         // Pid2 has higher priority than pid1
         waitList[arrayIndex] = pid2;
-        // printf("Added %d to slot %d\n", pid2, arrayIndex);
         updateWaitListArray(waitList[arrayIndex + 1], pid1, arrayIndex + 1);
     }
     else
@@ -131,79 +183,87 @@ void updateWaitListArray(int pid1, int pid2, int arrayIndex)
 
 void addToQueue(int process)
 {
-    printf("Adding %d to waitlist\n", process);
     updateWaitListArray(waitList[0], process, 0);
 }
 
 int processNotInWait(int process)
 {
-    int result = 1;
     for (int i = 0; i < fileLines; i++)
     {
         if (waitList[i] == process)
         {
-            result = 0;
+            return 0;
         }
     }
-    return result;
+    return 1;
+}
+
+void shiftWaitList()
+{
+    for (int i = 0; i < fileLines - 1; i++)
+    {
+        waitList[i] = waitList[i + 1];
+    }
+    waitList[fileLines] = -1;
 }
 
 int getPriorityProcess()
 {
     int priorityProcess = currProcess;
+    if (priorityProcess == -1)
+    {
+        priorityProcess = waitList[0];
+    }
+    // printf("\n");
+    // printWaitQueue();
+    // printf("\nCurrent Piority: %d\n", priorityProcess);
     for (int i = 0; i < fileLines; i++)
     {
+        int incomingID = fileData[i][0];
         if (priorityProcess != -1)
         {
+            int priorityLine = getProcessLine(priorityProcess);
+            int priorityID = fileData[priorityLine][0];
             if (fileData[i][1] == timePassed)
             {
-                if (fileData[priorityProcess][3] >= fileData[i][3] || processNotInWait(fileData[i][0]) == 1)
+                if (comparePriority(priorityID, incomingID) == incomingID && processNotInWait(incomingID) == 1)
                 {
-                    if (comparePriority(fileData[priorityProcess][0], fileData[i][0]) == fileData[i][0])
-                    {
-                        addToQueue(fileData[priorityProcess][0]);
-                        priorityProcess = fileData[i][0];
-                    }
-                    else
-                    {
-                        addToQueue(fileData[i][0]);
-                    }
+                    // printf("\nAdding priorityID %d to queue\n", priorityID);
+                    addToQueue(priorityID);
+                    priorityProcess = incomingID;
                 }
                 else
                 {
-                    addToQueue(fileData[i][0]);
+                    // printf("\nAdding incomingID %d to queue\n", incomingID);
+                    addToQueue(incomingID);
                 }
             }
         }
         else
         {
-            priorityProcess = fileData[i][0];
+            priorityProcess = incomingID;
         }
     }
+    // printf("\n");
+    // printWaitQueue();
     return priorityProcess;
-}
-
-void shiftWaitList()
-{
-    for (int i = 0; i < fileLines; i++)
-    {
-        if (waitList[i] != -1)
-        {
-            waitList[i] = waitList[i + 1];
-        }
-    }
 }
 
 void terminateProcess()
 {
-    //Send termiante signal to process
-    currProcess = waitList[0];
-    shiftWaitList();
+    kill(fileData[getProcessLine(currProcess)][4], SIGTERM);
+    printf("%d Seconds\n\n", timePassed);
+    currProcess = -1;
+    terminatedProcesses++;
+    if (terminatedProcesses == fileLines)
+    {
+        printf("All processes have successfully run!\n");
+        exit(1);
+    }
 }
 
 void tickCurrProcess()
 {
-    int terminate = 0;
     for (int i = 0; i < fileLines; i++)
     {
         if (fileData[i][0] == currProcess && terminate == 0)
@@ -216,20 +276,28 @@ void tickCurrProcess()
                 terminate = 1;
             }
         }
-        printf("Time[%d]: %d\n", i, fileData[i][2]);
+        // printf("Time[%d]: %d\n", i, fileData[i][2]);
     }
 }
 
 void checkCurrentProcess()
 {
     int priorityProcess = getPriorityProcess();
-    startProcess(priorityProcess);
+    if (priorityProcess != currProcess)
+    {
+        if (priorityProcess == waitList[0])
+        {
+            shiftWaitList();
+        }
+        startProcess(priorityProcess);
+    }
+    // printf("\n");
 }
 
 void timer_handler(int signal)
 {
     timePassed++;
-    printf("%d Seconds\n", timePassed);
+    // printf("%d Seconds\n\n", timePassed);
     if (currProcess != -1)
     {
         tickCurrProcess();
@@ -262,6 +330,10 @@ void readFile(char *fileName)
 
     while (1)
     {
+        if (terminatedProcesses == fileLines)
+        {
+            exit(1);
+        }
     }
 }
 
