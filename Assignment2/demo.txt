@@ -1,0 +1,40 @@
+As I am unable to copy and paste what my terminal displays,
+I will type the portion of my terminal that I am able to see
+
+-------------------------------------------------------------
+number.
+
+Scheduler: Time Now: 14 Seconds
+Terminating Process 3 (Pid 1698) and Scheduling to Process 0 (Pid 1699)
+
+Process 3: My priority is 2, my PID is 1698: I complete my tasl
+and I am exiting. My highest prime number I found is 1000009922.
+
+Process 0: My priority is 3, my PID is 1699: I just got started.
+I am starting with the number 1000000000 to find the next prime
+number.
+
+Scheduler: Time Now: 19 Seconds
+Terminating Process 0 (Pid 1699) and Scheduling to Process 4 (Pid 1700)
+
+Process 1: My priority is 3, my PID is 1699: I completed my task
+and I am exiting. Highest prime number I found is 1000008182.
+
+Process 4: My priority is 3, my PID is 1700: I just got started.
+I am starting with the number 1000000000 to find the next prime
+number.
+
+Scheduler: Time Now: 23 Seconds
+Terminating Process 4 (Pid 1700) and Scheduling to Process 5 (Pid 1701)
+
+Process 4: My priority is 3, my PID is 1700: I complete my task
+and I am exiting. Highest prime number I found is 1000006607.
+
+Process 5: My priority is 4, my PID is 1701: I just got started.
+I am starting with the number 1000000000 to find the next prime
+number.
+
+Scheduler: Time Now: 25 Seconds
+Terminating Process 5 (Pid 1701)
+
+All processes have successfully run!

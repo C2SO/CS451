@@ -2,65 +2,69 @@
 // CS 451
 // prime.c
 
-#include <ctype.h>
-#include <dirent.h>
 #include <math.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
-#include <sys/time.h>
-#include <time.h>
 #include <unistd.h>
 
-int checkPrimeAndPrint(unsigned long int toCheck);
-int proccesNumber, priority, start = 0;
-long unsigned int bigPrime = -1;
+int proccesNumber, priority, start = -1; // Initialize the process number, process priority, and the start number to -1
+long unsigned int bigPrime = -1;         // Set the prime number we will be printing to -1
 
+// This function checks what signal the process receives, then decides what to do from there.
 void handler(int signum)
 {
-    switch (signum)
+    switch (signum) // For each signal sent
     {
-    case SIGTSTP:
+    case SIGTSTP: // If the process is to suspend...
         printf("Process %d: My priority is %d, my PID is %d: I am about to be\n", proccesNumber, priority, getpid());
         printf("suspended... Highest prime number I found is %lu.\n\n", bigPrime);
         kill(getpid(), SIGSTOP);
         break;
-    case SIGCONT:
+    case SIGCONT: // If the process is to resume...
         printf("Process %d: My priority is %d, my PID is %d: I just got resumed.\n", proccesNumber, priority, getpid());
         printf("Highest prime number I found is %lu.\n\n", bigPrime);
         break;
-    case SIGTERM:
+    case SIGTERM: // If the process is to terminate...
         printf("Process %d: My priority is %d, my PID is %d: I completed my task\n", proccesNumber, priority, getpid());
         printf("and I am exiting. Highest prime number I found is %lu.\n\n", bigPrime);
         kill(getpid(), SIGKILL);
         break;
     }
 }
+
+//This function checks the arguments passed into the process when it is called
 void checkArgs(int argc, char *argv[])
 {
     int c;
     while ((c = getopt(argc, argv, "n:p:s:")) != -1)
     {
-        switch (c)
+        switch (c) // for each argument passed in
         {
-        case 'n':
+        case 'n': // Set the process number
             proccesNumber = atoi(optarg);
             break;
-        case 'p':
+        case 'p': // Set the process priority
             priority = atoi(optarg);
             break;
-        case 's':
+        case 's': // Set the process' start number
             start = atoi(optarg);
             break;
         }
     }
 }
 
+// The main function checks the args, and sets an infinite loop to check if a number is prime
 int main(int argc, char **argv)
 {
-    checkArgs(argc, argv);
+    checkArgs(argc, argv); // Check arguments
 
+    printf("Process %d: My priority is %d, my PID is %d: I just got started.\n", proccesNumber, priority, getpid());
+    printf("I am starting with the number %d to find the next prime\n", start);
+    printf("number.\n\n");
+
+    // Set the sigaction object to wait for actions from A2.c
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = handler;
@@ -68,11 +72,10 @@ int main(int argc, char **argv)
     sigaction(SIGCONT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    printf("Process %d: My priority is %d, my PID is %d: I just got started.\n", proccesNumber, priority, getpid());
-    printf("I am starting with the number %d to find the next prime\n", start);
-    printf("number.\n\n");
-
-    int numPrinted = 0;
+    // Starting with the input number + 1
+    // While a number is less than the sqare root of the input number + 1
+    // If there is a remainder if divided, then it is not a ptime
+    // Else, it is a prime
     long unsigned int possibleBigPrime = start + 1;
     while (1)
     {
