@@ -2,22 +2,21 @@
 // CS 451
 // A2.c
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
-#include <ctype.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <signal.h>
 #include <sys/time.h>
+#include <unistd.h>
 
-int **fileData;
-int currProcess = -1;
-int timePassed, fileLines, terminatedProcesses, terminate, printTimeBool = 0;
-int *waitList;
-char *timeString[100];
+int **fileData;                                                               // This will be a resizable matrix that we are going to be mallocing later on
+int currProcess = -1;                                                         // Initialize the current process as -1
+int timePassed, fileLines, terminatedProcesses, terminate, printTimeBool = 0; // Initialize the time passed,
+                                                                              // the lines in the input file, the number of terminated processes,
+                                                                              // the terminate boolean, and the print time boolean to -1
+int *waitList;                                                                // This is a waitlist array that will be populated later
 
+// This function opens the file, and returns the file object
 FILE *openFile(char *fileName)
 {
     FILE *primeFile = fopen(fileName, "r");
@@ -29,6 +28,8 @@ FILE *openFile(char *fileName)
     return primeFile;
 }
 
+// This function checks if the time was printed yet for this second
+// If so, it will not do anything. If not, it will do nothing.
 void printTime()
 {
     if (printTimeBool == 0)
@@ -38,11 +39,15 @@ void printTime()
     printTimeBool = 1;
 }
 
+// This function counts lines in a file.
+// It is passed in a file name, and will open that file and use it.
 int countLines(char *fileName)
 {
     int lines = 1;
     FILE *tempFile = openFile(fileName);
     char chr = getc(tempFile);
+
+    //For each line in the file, increase the iterator
     while (chr != EOF)
     {
         if (chr == '\n')
@@ -52,16 +57,22 @@ int countLines(char *fileName)
         chr = getc(tempFile);
     }
     fclose(tempFile);
+
+    //Returns the number of lines in the file
     return lines;
 }
 
+// This function opens the file, and then it converts the file into a matrix
 int **fileToArray(char *fileName)
 {
-    int **fileArray = malloc(fileLines * sizeof(double));
+    int **fileArray = malloc(fileLines * sizeof(double)); // Allocate memory for the matrix
+
+    //For each line in the file, allocate the memory for the rows
     for (int i = 0; i < fileLines; ++i)
     {
         fileArray[i] = malloc(5 * sizeof(double));
     }
+
     FILE *primeFile = openFile(fileName);
     int iterator = 0;
     for (int i = 0; i < fileLines; i++)
@@ -75,6 +86,7 @@ int **fileToArray(char *fileName)
         }
     }
     return fileArray;
+    free(fileArray);
 }
 
 void printWaitQueue()
@@ -376,11 +388,9 @@ void readFile(char *fileName)
 
     while (1)
     {
-        if (terminatedProcesses == fileLines)
-        {
-            exit(1);
-        }
     }
+
+    free(waitList);
 }
 
 char *getFileName(char *argv[])
