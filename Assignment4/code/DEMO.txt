@@ -1,0 +1,43 @@
+./A4 10
+allocator> RQ 0 1 F
+Adding 1 bytes with First Fit...
+Process 0 successfully requested 1 bytes.
+allocator> STAT
+Addresses [0:0] Process P0
+Addresses [1:9] Unused
+allocator> RQ 1 2 W
+Adding 2 bytes with Worst Fit...
+Process 1 successfully requested 2 bytes.
+allocator> STAT
+Addresses [0:0] Process P0
+Addresses [1:2] Process P1
+Addresses [3:9] Unused
+allocator> RL 0
+allocator> STAT
+Addresses [0:0] Unused
+Addresses [1:2] Process P1
+Addresses [3:9] Unused
+allocator> RQ 0 2 B
+Adding 2 bytes with First Fit...
+Process 0 successfully requested 2 bytes.
+allocator> STAT
+Addresses [0:0] Unused
+Addresses [1:2] Process P1
+Addresses [3:4] Process P0
+Addresses [5:9] Unused
+allocator> C
+allocator> STAT
+Addresses [0:1] Process P1
+Addresses [2:3] Process P0
+Addresses [4:9] Unused
+allocator> RL 1
+allocator> RQ 1 2 W
+Adding 2 bytes with Worst Fit...
+Process 1 successfully requested 2 bytes.
+allocator> STAT
+Addresses [0:1] Unused
+Addresses [2:3] Process P0
+Addresses [4:5] Process P1
+Addresses [6:9] Unused
+allocator> X
+Program terminating...

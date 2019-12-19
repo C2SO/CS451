@@ -8,3 +8,6 @@ The first column is the process number
 The second column is the time that the process is received
 The third column is the number of bursts (seconds) the process needs to run
 The fourth column is the priority of the process
+
+
+I HAVE USED ONE COUPON FOR THIS ASSIGNMENT!
